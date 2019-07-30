@@ -1,0 +1,28 @@
+JDBC：Java程序连接数据库的标准
+--------------------------------------------------------------------------
+JDBC标准操作
+
+//1.加载驱动
+Class.forName("com.mysql.jdbc.Driver");
+
+//2.获取连接 Connection
+Connection conn = DriverManager.getConnection(String url,String username,String password);
+
+url:
+jdbc:mysql://localhost:3306/jdbc
+
+//3.执行SQL
+// Statement封装了sql的执行过程
+	PreparedStatement类：预编译sql类，会使
+// Result封装查询后的结果
+
+Statement stmm = conn.createStatement();
+Result result = stmm.executeQuery(sql);
+
+//遍历结果
+while(result.next()) {
+	result.getXXX("列名称")
+}
+
+//4.释放资源
+// Connection Statement ResultSet
