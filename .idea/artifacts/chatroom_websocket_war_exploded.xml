@@ -1,0 +1,16 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="chatroom_websocket:war exploded">
+    <output-path>$USER_HOME$/Desktop/Bit/项目/websocket_chatroom/target/chatroom_websocket-1.0-SNAPSHOT</output-path>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="chatroom_websocket" />
+        </element>
+      </element>
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$USER_HOME$/Desktop/Bit/项目/websocket_chatroom/target/chatroom_websocket-1.0-SNAPSHOT/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="javaee-facet-resources" facet="chatroom_websocket/web/Web" />
+    </root>
+  </artifact>
+</component>
