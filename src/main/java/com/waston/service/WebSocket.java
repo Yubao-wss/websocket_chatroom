@@ -1,8 +1,17 @@
 package com.waston.service;
 
+import com.waston.entity.Message2Client;
+import com.waston.entity.MessageFromClient;
+import com.waston.utils.CommUtils;
+
+import javax.servlet.annotation.WebServlet;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -19,11 +28,30 @@ public class WebSocket {
     //绑定当前WebSocket会话
     private Session session;
 
+    //储存所有的用户列表
+    private static Map<String,String> names = new ConcurrentHashMap<>();
+    //储存当前客户端的名称
+    private String userName;
+
     @OnOpen
     public void onOpen(Session session){
         this.session = session;
+        String userName = session.getQueryString().split("=")[1];
+        this.userName = userName;
+        //将客户端实体保存到clients
         clients.add(this);
+        //将当前用户以及ID保存到用户列表
+        names.put(session.getId(),userName);
         System.out.println("有新的连接，当前Session的ID为:"+session.getId() + ",当前聊天室共有" + clients.size() + "人");
+        //发送给所有用户一个上线通知
+        Message2Client message2Client = new Message2Client();
+        message2Client.setContent(userName+"上线了！");
+        message2Client.setNames(names);
+        //发送消息
+        String jsonStr = CommUtils.object2Json(message2Client);
+        for(WebSocket webSocket : clients){
+            webSocket.sendMsg(jsonStr);
+        }
     }
 
     @OnError
@@ -34,19 +62,53 @@ public class WebSocket {
 
     @OnMessage
     public void onMessage(String msg){
-        System.out.println("浏览器发来的信息为:"+msg);
+        //将msg封装为MessageFromClient对象
+        MessageFromClient messageFromClient = (MessageFromClient) CommUtils.json2Object(msg,MessageFromClient.class);
+        //判断聊天类别，并开始发送消息
+        if(messageFromClient.getType().equals("1")){
+            //群聊发送
+            String content = messageFromClient.getMsg();
+            Message2Client message2Client = new Message2Client();
+            message2Client.setContent(content);
+            message2Client.setNames(names);
 
-        //群聊
-        for(WebSocket webSocket : clients){
-            webSocket.sendMsg(msg);
+            for(WebSocket webSocket : clients){
+                webSocket.sendMsg(CommUtils.object2Json(message2Client));
+            }
+        }else if(messageFromClient.getType().equals("2")){
+            //私聊发送
+            String content = messageFromClient.getMsg();
+            int toLength = messageFromClient.getTo().length();
+            String tos[] = messageFromClient.getTo().substring(0,toLength-1).split("-");
+            List<String> lists = Arrays.asList(tos);
+            //找到指定的ID
+            for(WebSocket webSocket : clients){
+                if(lists.contains(webSocket.session.getId()) && this.session.getId() != webSocket.session.getId()){
+                    Message2Client message2Client = new Message2Client();
+                    message2Client.setContent(userName,content);
+                    message2Client.setNames(names);
+                    webSocket.sendMsg(CommUtils.object2Json(message2Client));
+                }
+            }
         }
     }
 
     @OnClose
     public void onClose(){
-        System.out.println("有用户退出聊天室");
+        //先将客户端聊天实体移除
         clients.remove(this);
-        System.out.println("当前聊天室还剩下:"+clients.size()+"人");
+        //从用户列表中移除该用户ID
+        names.remove(session.getId());
+        System.out.println(userName+"断开连接！");
+        //给当前所有在线的用户发送一个通知
+        Message2Client message2Client = new Message2Client();
+        message2Client.setContent(userName+"下线了！");
+        message2Client.setNames(names);
+        String jsonStr = CommUtils.object2Json(message2Client);
+
+        for(WebSocket webSocket : clients){
+            webSocket.sendMsg(jsonStr);
+        }
     }
 
     public void sendMsg(String msg){

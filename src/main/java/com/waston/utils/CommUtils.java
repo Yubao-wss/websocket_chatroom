@@ -1,5 +1,8 @@
 package com.waston.utils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -10,6 +13,7 @@ import java.util.Properties;
  * @Date: 2019/7/30 19:04
  */
 public class CommUtils {
+    private static final Gson gson = new GsonBuilder().create();
     private CommUtils(){}
 
     /**
@@ -31,4 +35,14 @@ public class CommUtils {
         }
         return properties;
     }
+    public static String object2Json(Object obj){
+        return gson.toJson(obj);
+    }
+    public static Object json2Object(String jsonStr,Class objClass){
+        return gson.fromJson(jsonStr,objClass);
+    }
+    public static boolean strIsNull(String str){
+        return str == null || str.equals("");
+    }
+
 }
